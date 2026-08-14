@@ -1,0 +1,553 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="年度总结" description="内部年度工作总结">
+  <div id="slides-app">
+    <!-- 上传区域 -->
+    <div id="upload-section" class="section">
+      <h2>上传年度总结</h2>
+      <div class="upload-area" id="drop-zone">
+        <input type="file" id="file-input" accept=".pptx,.ppt" multiple hidden />
+        <p>拖拽 PPT 文件到这里，或 <label for="file-input" class="upload-btn">点击选择</label></p>
+        <p class="hint">支持 .pptx 格式，自动转换为在线幻灯片</p>
+      </div>
+      <div id="upload-progress" class="hidden">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <p id="progress-text">准备中...</p>
+      </div>
+    </div>
+
+    <!-- 幻灯片列表 -->
+    <div id="list-section" class="section">
+      <h2>年度总结列表</h2>
+      <div id="slides-list" class="slides-grid"></div>
+    </div>
+
+    <!-- 幻灯片查看器 -->
+    <div id="viewer-section" class="section hidden">
+      <div class="viewer-header">
+        <button id="back-btn" class="btn-back">← 返回列表</button>
+        <h3 id="slide-title"></h3>
+        <div class="viewer-controls">
+          <button id="prev-btn" class="btn-control">上一页</button>
+          <span id="slide-counter">1 / 1</span>
+          <button id="next-btn" class="btn-control">下一页</button>
+          <button id="fullscreen-btn" class="btn-control">全屏</button>
+        </div>
+      </div>
+      <div class="slide-container" id="slide-container">
+        <div class="slide-content" id="slide-content"></div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  #slides-app {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .section {
+    margin-bottom: 3rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--color-text);
+  }
+
+  /* 上传区域 */
+  .upload-area {
+    border: 2px dashed var(--color-border);
+    border-radius: 12px;
+    padding: 3rem;
+    text-align: center;
+    transition: all 0.3s;
+    background: var(--color-surface);
+  }
+
+  .upload-area:hover, .upload-area.dragover {
+    border-color: var(--color-accent);
+    background: var(--color-surface-hover);
+  }
+
+  .upload-btn {
+    color: var(--color-accent);
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .hint {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+  }
+
+  /* 进度条 */
+  .progress-bar {
+    height: 6px;
+    background: var(--color-border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 1rem 0;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--color-accent);
+    width: 0%;
+    transition: width 0.3s;
+  }
+
+  /* 幻灯片网格 */
+  .slides-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .slide-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .slide-card:hover {
+    border-color: var(--color-accent);
+    transform: translateY(-2px);
+  }
+
+  .slide-preview {
+    height: 160px;
+    background: var(--color-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: var(--color-text-muted);
+  }
+
+  .slide-info {
+    padding: 1rem;
+  }
+
+  .slide-info h3 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-text);
+  }
+
+  .slide-meta {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .slide-actions {
+    padding: 0 1rem 1rem;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .btn-delete {
+    font-size: 0.75rem;
+    color: #ef4444;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* 查看器 */
+  .viewer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .viewer-header h3 {
+    flex: 1;
+    text-align: center;
+  }
+
+  .btn-back, .btn-control {
+    padding: 0.5rem 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-back:hover, .btn-control:hover {
+    background: var(--color-surface-hover);
+    border-color: var(--color-accent);
+  }
+
+  .viewer-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  #slide-counter {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    min-width: 60px;
+    text-align: center;
+  }
+
+  .slide-container {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    aspect-ratio: 16/9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .slide-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .slide-content h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .slide-content h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .slide-content ul {
+    text-align: left;
+    max-width: 600px;
+  }
+
+  .slide-content li {
+    margin: 0.5rem 0;
+    color: var(--color-text-muted);
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  /* 全屏模式 */
+  :fullscreen .slide-container {
+    border: none;
+    border-radius: 0;
+  }
+</style>
+
+<script>
+  // 幻灯片数据管理
+  class SlidesManager {
+    private storageKey = 'annual-slides';
+
+    getAll(): SlideData[] {
+      const data = localStorage.getItem(this.storageKey);
+      return data ? JSON.parse(data) : [];
+    }
+
+    save(slides: SlideData[]) {
+      localStorage.setItem(this.storageKey, JSON.stringify(slides));
+    }
+
+    add(slide: SlideData) {
+      const slides = this.getAll();
+      slides.unshift(slide);
+      this.save(slides);
+    }
+
+    remove(id: string) {
+      const slides = this.getAll().filter(s => s.id !== id);
+      this.save(slides);
+    }
+  }
+
+  interface SlideData {
+    id: string;
+    title: string;
+    date: string;
+    slides: Slide[];
+  }
+
+  interface Slide {
+    title?: string;
+    content: string;
+    notes?: string;
+  }
+
+  const manager = new SlidesManager();
+  let currentSlides: SlideData | null = null;
+  let currentSlideIndex = 0;
+
+  // DOM 元素
+  const dropZone = document.getElementById('drop-zone')!;
+  const fileInput = document.getElementById('file-input') as HTMLInputElement;
+  const progressSection = document.getElementById('upload-progress')!;
+  const progressFill = document.getElementById('progress-fill')!;
+  const progressText = document.getElementById('progress-text')!;
+  const listSection = document.getElementById('list-section')!;
+  const viewerSection = document.getElementById('viewer-section')!;
+  const slidesList = document.getElementById('slides-list')!;
+  const slideContent = document.getElementById('slide-content')!;
+  const slideTitle = document.getElementById('slide-title')!;
+  const slideCounter = document.getElementById('slide-counter')!;
+  const backBtn = document.getElementById('back-btn')!;
+  const prevBtn = document.getElementById('prev-btn')!;
+  const nextBtn = document.getElementById('next-btn')!;
+  const fullscreenBtn = document.getElementById('fullscreen-btn')!;
+  const uploadSection = document.getElementById('upload-section')!;
+
+  // 拖拽上传
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const files = e.dataTransfer?.files;
+    if (files) handleFiles(files);
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    const files = (e.target as HTMLInputElement).files;
+    if (files) handleFiles(files);
+  });
+
+  // 处理上传的文件
+  async function handleFiles(files: FileList) {
+    for (const file of Array.from(files)) {
+      if (!file.name.endsWith('.pptx') && !file.name.endsWith('.ppt')) {
+        alert('请上传 .pptx 格式的文件');
+        continue;
+      }
+      await processPPT(file);
+    }
+    renderList();
+  }
+
+  // 处理 PPT 文件
+  async function processPPT(file: File) {
+    progressSection.classList.remove('hidden');
+    progressText.textContent = `正在处理: ${file.name}`;
+    progressFill.style.width = '0%';
+
+    try {
+      // 使用 JSZip 解析 pptx
+      const JSZip = await import('jszip');
+      const zip = await JSZip.loadAsync(file);
+
+      // 获取幻灯片文件
+      const slideFiles: string[] = [];
+      zip.forEach((path) => {
+        if (path.match(/ppt\/slides\/slide\d+\.xml$/)) {
+          slideFiles.push(path);
+        }
+      });
+
+      slideFiles.sort();
+      const slides: Slide[] = [];
+
+      for (let i = 0; i < slideFiles.length; i++) {
+        progressFill.style.width = `${((i + 1) / slideFiles.length) * 100}%`;
+        progressText.textContent = `解析幻灯片 ${i + 1}/${slideFiles.length}...`;
+
+        const xml = await zip.file(slideFiles[i])!.async('text');
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(xml, 'text/xml');
+
+        // 提取文本内容
+        const texts: string[] = [];
+        doc.querySelectorAll('a:t').forEach(t => {
+          const text = t.textContent?.trim();
+          if (text) texts.push(text);
+        });
+
+        slides.push({
+          title: texts[0] || `幻灯片 ${i + 1}`,
+          content: texts.slice(1).join('\n') || texts[0] || ''
+        });
+      }
+
+      // 保存
+      const slideData: SlideData = {
+        id: Date.now().toString(),
+        title: file.name.replace(/\.(pptx|ppt)$/, ''),
+        date: new Date().toLocaleDateString('zh-CN'),
+        slides
+      };
+
+      manager.add(slideData);
+      progressText.textContent = '处理完成！';
+
+      setTimeout(() => {
+        progressSection.classList.add('hidden');
+      }, 1500);
+
+    } catch (error) {
+      console.error('解析 PPT 失败:', error);
+      progressText.textContent = '解析失败，请确保文件格式正确';
+    }
+  }
+
+  // 渲染列表
+  function renderList() {
+    const slides = manager.getAll();
+
+    if (slides.length === 0) {
+      slidesList.innerHTML = `
+        <div class="empty-state" style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--color-text-muted);">
+          <p>还没有年度总结，上传第一个吧！</p>
+        </div>
+      `;
+      return;
+    }
+
+    slidesList.innerHTML = slides.map(s => `
+      <div class="slide-card" data-id="${s.id}">
+        <div class="slide-preview">📊</div>
+        <div class="slide-info">
+          <h3>${s.title}</h3>
+          <div class="slide-meta">
+            <span>${s.slides.length} 页</span>
+            <span>${s.date}</span>
+          </div>
+        </div>
+        <div class="slide-actions">
+          <button class="btn-delete" data-id="${s.id}">删除</button>
+        </div>
+      </div>
+    `).join('');
+
+    // 绑定事件
+    slidesList.querySelectorAll('.slide-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).classList.contains('btn-delete')) return;
+        const id = card.getAttribute('data-id');
+        const slide = manager.getAll().find(s => s.id === id);
+        if (slide) openViewer(slide);
+      });
+    });
+
+    slidesList.querySelectorAll('.btn-delete').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        if (confirm('确定删除这份年度总结吗？')) {
+          manager.remove(id!);
+          renderList();
+        }
+      });
+    });
+  }
+
+  // 打开查看器
+  function openViewer(slideData: SlideData) {
+    currentSlides = slideData;
+    currentSlideIndex = 0;
+
+    uploadSection.classList.add('hidden');
+    listSection.classList.add('hidden');
+    viewerSection.classList.remove('hidden');
+
+    slideTitle.textContent = slideData.title;
+    renderSlide();
+  }
+
+  // 渲染当前幻灯片
+  function renderSlide() {
+    if (!currentSlides) return;
+
+    const slide = currentSlides.slides[currentSlideIndex];
+    slideCounter.textContent = `${currentSlideIndex + 1} / ${currentSlides.slides.length}`;
+
+    // 简单的内容渲染
+    const lines = slide.content.split('\n');
+    let html = '';
+
+    if (slide.title) {
+      html += `<h2>${slide.title}</h2>`;
+    }
+
+    if (lines.length > 1) {
+      html += '<ul>' + lines.map(l => `<li>${l}</li>`).join('') + '</ul>';
+    } else {
+      html += `<p style="font-size: 1.25rem; color: var(--color-text-muted);">${slide.content}</p>`;
+    }
+
+    slideContent.innerHTML = html;
+  }
+
+  // 返回列表
+  backBtn.addEventListener('click', () => {
+    viewerSection.classList.add('hidden');
+    uploadSection.classList.remove('hidden');
+    listSection.classList.remove('hidden');
+    currentSlides = null;
+  });
+
+  // 上一页/下一页
+  prevBtn.addEventListener('click', () => {
+    if (currentSlideIndex > 0) {
+      currentSlideIndex--;
+      renderSlide();
+    }
+  });
+
+  nextBtn.addEventListener('click', () => {
+    if (currentSlides && currentSlideIndex < currentSlides.slides.length - 1) {
+      currentSlideIndex++;
+      renderSlide();
+    }
+  });
+
+  // 全屏
+  fullscreenBtn.addEventListener('click', () => {
+    viewerSection.requestFullscreen?.();
+  });
+
+  // 键盘导航
+  document.addEventListener('keydown', (e) => {
+    if (!currentSlides) return;
+    if (e.key === 'ArrowLeft') prevBtn.click();
+    if (e.key === 'ArrowRight') nextBtn.click();
+    if (e.key === 'Escape') backBtn.click();
+  });
+
+  // 初始化
+  renderList();
+</script>
