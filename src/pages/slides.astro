@@ -416,15 +416,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const password = passwordInput.value.trim();
     if (!password) return;
 
-    // 直接本地验证（更可靠）
-    if (password === 'houyulong2024') {
-      isAuthenticated = true;
-      sessionStorage.setItem(STORAGE_KEY, password);
-      showMainContent();
-      loadSlidesLocal();
-      return;
-    }
-
     // 尝试 API 验证
     try {
       const response = await fetch(`${API_BASE}/auth`, {
@@ -445,6 +436,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         passwordInput.value = '';
       }
     } catch (error) {
+      // API 不可用时的提示
+      loginError.textContent = '连接服务器失败，请稍后重试';
       loginError.classList.remove('hidden');
       passwordInput.value = '';
     }
@@ -452,14 +445,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   // 验证 token
   async function verifyToken(token: string) {
-    // 如果是本地密码，直接验证
-    if (token === 'houyulong2024') {
-      isAuthenticated = true;
-      showMainContent();
-      loadSlidesLocal();
-      return;
-    }
-
     try {
       const response = await fetch(`${API_BASE}/slides`, {
         headers: { 'Authorization': `Bearer ${token}` },
@@ -471,12 +456,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         loadSlides();
       } else {
         sessionStorage.removeItem(STORAGE_KEY);
+        loginModal.classList.remove('hidden');
+        mainContent.classList.add('hidden');
       }
     } catch (error) {
-      // API 不可用时，也显示本地数据
-      isAuthenticated = true;
-      showMainContent();
-      loadSlidesLocal();
+      // API 不可用时，需要重新登录
+      sessionStorage.removeItem(STORAGE_KEY);
+      loginModal.classList.remove('hidden');
+      mainContent.classList.add('hidden');
     }
   }
 
