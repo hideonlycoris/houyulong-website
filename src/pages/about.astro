@@ -1,0 +1,239 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="关于">
+  <section class="about">
+    <div class="about-header">
+      <h1>关于我</h1>
+      <p class="subtitle">供应链管理 × AI 工具 × 技术探索</p>
+    </div>
+
+    <div class="about-content">
+      <section class="about-section">
+        <h2>👋 你好</h2>
+        <p>
+          我是侯宇龙，一名专注于供应链领域的技术从业者。
+        </p>
+        <p>
+          日常工作中，我热衷于探索如何用 AI 和技术工具提升供应链管理效率。
+          从开发智能培训系统到搭建 S&OP 计划平台，我一直在寻找技术与业务的最佳结合点。
+        </p>
+      </section>
+
+      <section class="about-section">
+        <h2>💼 技能栈</h2>
+        <div class="skills">
+          <div class="skill-group">
+            <h3>供应链</h3>
+            <ul>
+              <li>需求预测与计划管理</li>
+              <li>库存优化与控制</li>
+              <li>供应商管理</li>
+              <li>仓储与物流</li>
+            </ul>
+          </div>
+          <div class="skill-group">
+            <h3>技术</h3>
+            <ul>
+              <li>Python / FastAPI / Streamlit</li>
+              <li>React / TypeScript</li>
+              <li>PostgreSQL / SQLite</li>
+              <li>Docker / 云部署</li>
+            </ul>
+          </div>
+          <div class="skill-group">
+            <h3>AI 工具</h3>
+            <ul>
+              <li>Claude / ChatGPT / Gemini</li>
+              <li>AI 编程助手</li>
+              <li>数据分析自动化</li>
+              <li>智能文档处理</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="about-section">
+        <h2>🚀 项目经历</h2>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+              <h3>驭长风培训系统</h3>
+              <p>基于 AI 的供应链新员工培训平台，集成 Google Gemini 实现智能评分</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+              <h3>S&OP 计划系统</h3>
+              <p>全链路销售与运营计划管理平台，支持需求预测与自动补货</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+              <h3>飞书 AI 助手</h3>
+              <p>集成 Claude API 的飞书机器人，支持智能问答与 ERP 报表生成</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="about-section">
+        <h2>📬 联系方式</h2>
+        <div class="contact-links">
+          <a href="https://github.com/hideonlycoris" target="_blank" class="contact-item">
+            <span class="contact-icon">GitHub</span>
+            <span>hideonlycoris</span>
+          </a>
+          <a href="mailto:houyulong@example.com" class="contact-item">
+            <span class="contact-icon">Email</span>
+            <span>houyulong@example.com</span>
+          </a>
+        </div>
+      </section>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .about {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 4rem 0;
+  }
+
+  .about-header {
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+
+  .about-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+  }
+
+  .subtitle {
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+  }
+
+  .about-section {
+    margin-bottom: 3rem;
+  }
+
+  .about-section h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+  }
+
+  .about-section p {
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+    line-height: 1.8;
+  }
+
+  .skills {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+  }
+
+  .skill-group h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--color-accent);
+  }
+
+  .skill-group ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .skill-group li {
+    color: var(--color-text-muted);
+    padding: 0.35rem 0;
+    font-size: 0.95rem;
+  }
+
+  .skill-group li::before {
+    content: "→ ";
+    color: var(--color-accent);
+  }
+
+  .timeline {
+    position: relative;
+    padding-left: 2rem;
+  }
+
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 5px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--color-border);
+  }
+
+  .timeline-item {
+    position: relative;
+    margin-bottom: 2rem;
+  }
+
+  .timeline-dot {
+    position: absolute;
+    left: -2rem;
+    top: 0.5rem;
+    width: 12px;
+    height: 12px;
+    background: var(--color-accent);
+    border-radius: 50%;
+    border: 2px solid var(--color-bg);
+  }
+
+  .timeline-content h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .timeline-content p {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+  }
+
+  .contact-links {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    color: var(--color-text);
+    transition: all 0.2s;
+  }
+
+  .contact-item:hover {
+    border-color: var(--color-accent);
+    color: var(--color-text);
+  }
+
+  .contact-icon {
+    font-weight: 600;
+    color: var(--color-accent);
+    min-width: 60px;
+  }
+</style>

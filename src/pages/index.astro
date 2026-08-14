@@ -1,0 +1,215 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="首页">
+  <section class="hero">
+    <h1>你好，我是 <span class="highlight">侯宇龙</span></h1>
+    <p class="subtitle">供应链管理 | AI 工具开发 | 数据分析</p>
+    <p class="description">
+      专注于供应链领域的技术探索与实践，用 AI 提升工作效率。
+    </p>
+    <div class="hero-actions">
+      <a href="/projects" class="btn btn-primary">查看项目</a>
+      <a href="/blog" class="btn btn-secondary">阅读博客</a>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="feature-card">
+      <div class="feature-icon">📦</div>
+      <h3>供应链系统</h3>
+      <p>S&OP 计划系统、培训系统、飞书 AI 助手等工具开发</p>
+      <a href="/projects">了解更多 →</a>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🤖</div>
+      <h3>AI 工具实践</h3>
+      <p>Claude、GPT、Gemini 等 AI 工具的深度应用与效率提升</p>
+      <a href="/blog">阅读文章 →</a>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>知识沉淀</h3>
+      <p>供应链管理方法论、数据分析技巧、技术学习笔记</p>
+      <a href="/knowledge">探索知识库 →</a>
+    </div>
+  </section>
+
+  <section class="recent">
+    <h2>最新内容</h2>
+    <div class="recent-grid">
+      <article class="recent-item">
+        <span class="recent-tag">项目</span>
+        <h3><a href="/projects/training-system">驭长风培训系统</a></h3>
+        <p>基于 AI 的供应链新员工培训系统，支持智能评分和证书生成</p>
+      </article>
+      <article class="recent-item">
+        <span class="recent-tag">知识</span>
+        <h3><a href="/knowledge/supply-chain">供应链管理知识体系</a></h3>
+        <p>从滚动计划到库存管理的完整知识框架</p>
+      </article>
+      <article class="recent-item">
+        <span class="recent-tag">博客</span>
+        <h3><a href="/blog/ai-tools-workflow">AI 工具工作流</a></h3>
+        <p>如何用 Claude + MCP 打造高效的开发工作流</p>
+      </article>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    text-align: center;
+    padding: 6rem 0 4rem;
+  }
+
+  .hero h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+  }
+
+  .highlight {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+  }
+
+  .description {
+    font-size: 1.1rem;
+    color: var(--color-text-muted);
+    max-width: 600px;
+    margin: 0 auto 2rem;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--color-accent);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: var(--color-accent-hover);
+    color: white;
+  }
+
+  .btn-secondary {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--color-accent);
+    color: var(--color-text);
+  }
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin: 4rem 0;
+  }
+
+  .feature-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 2rem;
+    transition: all 0.3s;
+  }
+
+  .feature-card:hover {
+    border-color: var(--color-accent);
+    transform: translateY(-2px);
+  }
+
+  .feature-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .feature-card h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .feature-card p {
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+  }
+
+  .feature-card a {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .recent {
+    margin-top: 4rem;
+  }
+
+  .recent h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .recent-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .recent-item {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.2s;
+  }
+
+  .recent-item:hover {
+    border-color: var(--color-accent);
+  }
+
+  .recent-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: var(--color-surface-hover);
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .recent-item h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .recent-item p {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+  }
+</style>

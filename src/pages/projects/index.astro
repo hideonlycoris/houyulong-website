@@ -1,0 +1,133 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const projects = await getCollection('projects');
+---
+
+<BaseLayout title="项目">
+  <section class="page-header">
+    <h1>项目展示</h1>
+    <p>供应链管理系统、AI 工具、效率提升方案</p>
+  </section>
+
+  <div class="projects-grid">
+    {projects.map((project) => (
+      <article class="project-card">
+        {project.data.cover && (
+          <img src={project.data.cover} alt={project.data.title} class="project-cover" />
+        )}
+        <div class="project-content">
+          <h2>
+            <a href={`/projects/${project.slug}`}>{project.data.title}</a>
+          </h2>
+          <p>{project.data.description}</p>
+          <div class="project-tech">
+            {project.data.tech.map((t: string) => (
+              <span class="tech-tag">{t}</span>
+            ))}
+          </div>
+          <div class="project-links">
+            {project.data.demo && (
+              <a href={project.data.demo} target="_blank" class="link-demo">在线演示</a>
+            )}
+            {project.data.github && (
+              <a href={project.data.github} target="_blank" class="link-github">GitHub</a>
+            )}
+          </div>
+        </div>
+      </article>
+    ))}
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header {
+    text-align: center;
+    padding: 4rem 0 3rem;
+  }
+
+  .page-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+  }
+
+  .page-header p {
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+  }
+
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .project-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .project-card:hover {
+    border-color: var(--color-accent);
+    transform: translateY(-2px);
+  }
+
+  .project-cover {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+  }
+
+  .project-content {
+    padding: 1.5rem;
+  }
+
+  .project-content h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .project-content h2 a {
+    color: var(--color-text);
+  }
+
+  .project-content h2 a:hover {
+    color: var(--color-accent);
+  }
+
+  .project-content p {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+  }
+
+  .project-tech {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .tech-tag {
+    padding: 0.25rem 0.75rem;
+    background: var(--color-surface-hover);
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    color: var(--color-accent);
+  }
+
+  .project-links {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .link-demo, .link-github {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+</style>

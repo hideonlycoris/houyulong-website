@@ -1,0 +1,335 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = '个人网站 - 供应链管理 | AI 工具 | 技术分享' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title} | houyulong.com</title>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="nav-container">
+        <a href="/" class="nav-logo">houyulong.com</a>
+        <div class="nav-links">
+          <a href="/projects">项目</a>
+          <a href="/blog">博客</a>
+          <a href="/knowledge">知识库</a>
+          <a href="/about">关于</a>
+        </div>
+        <button class="search-btn" id="search-toggle">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+          <span>搜索...</span>
+        </button>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <slot />
+    </main>
+
+    <footer class="footer">
+      <div class="footer-container">
+        <p>&copy; {new Date().getFullYear()} houyulong.com. All rights reserved.</p>
+        <div class="footer-links">
+          <a href="https://github.com/hideonlycoris" target="_blank">GitHub</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Pagefind Search -->
+    <div id="search-modal" class="search-modal" style="display: none;">
+      <div class="search-overlay"></div>
+      <div class="search-content">
+        <div class="search-header">
+          <input type="text" id="search-input" placeholder="搜索文章、知识库、项目..." />
+          <button id="search-close">ESC</button>
+        </div>
+        <div id="search-results" class="search-results"></div>
+      </div>
+    </div>
+
+    <style is:global>
+      :root {
+        --color-bg: #0f0f0f;
+        --color-surface: #1a1a1a;
+        --color-surface-hover: #252525;
+        --color-border: #333;
+        --color-text: #e5e5e5;
+        --color-text-muted: #888;
+        --color-accent: #3b82f6;
+        --color-accent-hover: #2563eb;
+        --color-success: #22c55e;
+        --color-warning: #f59e0b;
+        --color-danger: #ef4444;
+        --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+        --max-width: 1200px;
+        --nav-height: 64px;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: var(--font-sans);
+        background: var(--color-bg);
+        color: var(--color-text);
+        line-height: 1.6;
+        min-height: 100vh;
+      }
+
+      a {
+        color: var(--color-accent);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+
+      a:hover {
+        color: var(--color-accent-hover);
+      }
+
+      /* Navbar */
+      .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--nav-height);
+        background: rgba(15, 15, 15, 0.8);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--color-border);
+        z-index: 1000;
+      }
+
+      .nav-container {
+        max-width: var(--max-width);
+        margin: 0 auto;
+        padding: 0 2rem;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .nav-logo {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--color-text);
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 2rem;
+      }
+
+      .nav-links a {
+        color: var(--color-text-muted);
+        font-size: 0.9rem;
+        transition: color 0.2s;
+      }
+
+      .nav-links a:hover {
+        color: var(--color-text);
+      }
+
+      .search-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .search-btn:hover {
+        border-color: var(--color-accent);
+        color: var(--color-text);
+      }
+
+      /* Main Content */
+      .main-content {
+        max-width: var(--max-width);
+        margin: 0 auto;
+        padding: calc(var(--nav-height) + 2rem) 2rem 4rem;
+      }
+
+      /* Footer */
+      .footer {
+        border-top: 1px solid var(--color-border);
+        padding: 2rem;
+      }
+
+      .footer-container {
+        max-width: var(--max-width);
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+      }
+
+      .footer-links {
+        display: flex;
+        gap: 1.5rem;
+      }
+
+      .footer-links a {
+        color: var(--color-text-muted);
+      }
+
+      .footer-links a:hover {
+        color: var(--color-text);
+      }
+
+      /* Search Modal */
+      .search-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+      }
+
+      .search-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+      }
+
+      .search-content {
+        position: relative;
+        max-width: 600px;
+        margin: 100px auto 0;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .search-header {
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid var(--color-border);
+      }
+
+      .search-header input {
+        flex: 1;
+        padding: 1rem 1.5rem;
+        background: transparent;
+        border: none;
+        color: var(--color-text);
+        font-size: 1rem;
+        outline: none;
+      }
+
+      .search-header button {
+        padding: 0.5rem 1rem;
+        margin-right: 0.5rem;
+        background: var(--color-surface-hover);
+        border: none;
+        border-radius: 6px;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        font-size: 0.75rem;
+      }
+
+      .search-results {
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 0.5rem;
+      }
+
+      .search-result-item {
+        display: block;
+        padding: 1rem;
+        border-radius: 8px;
+        color: var(--color-text);
+        transition: background 0.2s;
+      }
+
+      .search-result-item:hover {
+        background: var(--color-surface-hover);
+      }
+
+      .search-result-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+      }
+
+      .search-result-excerpt {
+        font-size: 0.875rem;
+        color: var(--color-text-muted);
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .nav-links {
+          display: none;
+        }
+
+        .search-btn span {
+          display: none;
+        }
+      }
+    </style>
+
+    <script>
+      // Search functionality
+      const searchToggle = document.getElementById('search-toggle');
+      const searchModal = document.getElementById('search-modal') as HTMLElement;
+      const searchOverlay = document.querySelector('.search-overlay');
+      const searchClose = document.getElementById('search-close');
+      const searchInput = document.getElementById('search-input') as HTMLInputElement;
+      const searchResults = document.getElementById('search-results');
+
+      function openSearch() {
+        searchModal.style.display = 'block';
+        searchInput.focus();
+      }
+
+      function closeSearch() {
+        searchModal.style.display = 'none';
+        searchInput.value = '';
+        searchResults!.innerHTML = '';
+      }
+
+      searchToggle?.addEventListener('click', openSearch);
+      searchOverlay?.addEventListener('click', closeSearch);
+      searchClose?.addEventListener('click', closeSearch);
+
+      document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          openSearch();
+        }
+        if (e.key === 'Escape') {
+          closeSearch();
+        }
+      });
+    </script>
+  </body>
+</html>

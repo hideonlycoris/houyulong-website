@@ -1,0 +1,153 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = await getCollection('blog');
+const sortedPosts = posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<BaseLayout title="博客">
+  <section class="page-header">
+    <h1>博客</h1>
+    <p>供应链管理、AI 工具、技术实践的思考与总结</p>
+  </section>
+
+  <div class="blog-filters">
+    <button class="filter-btn active" data-filter="all">全部</button>
+    <button class="filter-btn" data-filter="供应链">供应链</button>
+    <button class="filter-btn" data-filter="AI">AI</button>
+    <button class="filter-btn" data-filter="技术">技术</button>
+  </div>
+
+  <div class="blog-list">
+    {sortedPosts.map((post) => (
+      <article class="blog-item" data-category={post.data.category}>
+        <time>{post.data.date.toLocaleDateString('zh-CN')}</time>
+        <h2>
+          <a href={`/blog/${post.slug}`}>{post.data.title}</a>
+        </h2>
+        <p>{post.data.description}</p>
+        <div class="blog-tags">
+          {post.data.tags.map((tag: string) => (
+            <span class="tag">#{tag}</span>
+          ))}
+        </div>
+      </article>
+    ))}
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header {
+    text-align: center;
+    padding: 4rem 0 2rem;
+  }
+
+  .page-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+  }
+
+  .page-header p {
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+  }
+
+  .blog-filters {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 3rem;
+  }
+
+  .filter-btn {
+    padding: 0.5rem 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 9999px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+  }
+
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: white;
+  }
+
+  .blog-list {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .blog-item {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    transition: all 0.2s;
+  }
+
+  .blog-item:hover {
+    border-color: var(--color-accent);
+  }
+
+  .blog-item time {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .blog-item h2 {
+    font-size: 1.25rem;
+    margin: 0.5rem 0;
+  }
+
+  .blog-item h2 a {
+    color: var(--color-text);
+  }
+
+  .blog-item h2 a:hover {
+    color: var(--color-accent);
+  }
+
+  .blog-item p {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .blog-tags {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .tag {
+    font-size: 0.8rem;
+    color: var(--color-accent);
+  }
+</style>
+
+<script>
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  const blogItems = document.querySelectorAll('.blog-item');
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const filter = btn.getAttribute('data-filter');
+      blogItems.forEach(item => {
+        const category = item.getAttribute('data-category');
+        if (filter === 'all' || category === filter) {
+          (item as HTMLElement).style.display = 'block';
+        } else {
+          (item as HTMLElement).style.display = 'none';
+        }
+      });
+    });
+  });
+</script>
