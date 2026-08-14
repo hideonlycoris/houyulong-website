@@ -636,6 +636,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     right: 0;
     bottom: 0;
     padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .html-open-hint {
+    text-align: center;
+    background: var(--color-surface);
+    padding: 3rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  .html-open-hint p {
+    color: var(--color-text-muted);
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
   }
 
   .html-iframe {
@@ -1013,44 +1030,27 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     const content = document.getElementById('viewer-content');
 
-    // HTML文件直接在iframe中显示
+    // HTML文件直接在新标签页中打开
     if (slide.rawHtml) {
       // 清理之前的Blob URL
       if (currentBlobUrl) {
         URL.revokeObjectURL(currentBlobUrl);
       }
 
-      // 注入CSS强制HTML内容占满iframe
-      const injectCss = `
-        <style>
-          html, body {
-            width: 100% !important;
-            height: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: auto !important;
-          }
-          * {
-            max-width: 100% !important;
-          }
-        </style>
-      `;
-
-      // 在head标签后注入CSS
-      let modifiedHtml = slide.rawHtml;
-      if (modifiedHtml.includes('</head>')) {
-        modifiedHtml = modifiedHtml.replace('</head>', injectCss + '</head>');
-      } else if (modifiedHtml.includes('<html')) {
-        modifiedHtml = modifiedHtml.replace(/<html[^>]*>/, '$&' + injectCss);
-      } else {
-        modifiedHtml = injectCss + modifiedHtml;
-      }
-
-      const blob = new Blob([modifiedHtml], { type: 'text/html' });
+      const blob = new Blob([slide.rawHtml], { type: 'text/html' });
       currentBlobUrl = URL.createObjectURL(blob);
+
+      // 在新标签页中打开HTML文件
+      window.open(currentBlobUrl, '_blank');
+
+      // 显示提示信息
       content.innerHTML = `
         <div class="html-viewer-container">
-          <iframe src="${currentBlobUrl}" class="html-iframe"></iframe>
+          <div class="html-open-hint">
+            <p>📄 HTML文件已在新标签页中打开</p>
+            <p>请查看浏览器标签页</p>
+            <button onclick="window.open('${currentBlobUrl}', '_blank')" class="btn-primary" style="max-width:200px;margin-top:1rem;">重新打开</button>
+          </div>
         </div>
       `;
       return;
