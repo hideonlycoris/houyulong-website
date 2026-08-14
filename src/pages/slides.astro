@@ -24,9 +24,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <!-- 上传区域 -->
     <div class="upload-section">
       <div class="upload-area" id="drop-zone">
-        <input type="file" id="file-input" accept=".pptx,.ppt" hidden />
-        <p>📁 拖拽 PPT 文件到这里，或 <label for="file-input" class="upload-link">点击选择</label></p>
-        <p class="hint">支持 .pptx 格式，自动转换为在线幻灯片</p>
+        <input type="file" id="file-input" accept=".pptx,.ppt,.docx,.doc,.xlsx,.xls,.html,.htm" hidden multiple />
+        <p>📁 拖拽文件到这里，或 <label for="file-input" class="upload-link">点击选择</label></p>
+        <p class="hint">支持 PPT、Word、Excel、HTML 格式</p>
       </div>
       <div id="upload-status" class="hidden">
         <div class="progress-bar">
@@ -507,8 +507,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   // 处理文件
   async function processFiles(files: FileList) {
     for (const file of Array.from(files)) {
-      if (!file.name.endsWith('.pptx')) {
-        alert('请上传 .pptx 格式的文件');
+      const ext = file.name.toLowerCase().split('.').pop();
+      if (!['pptx', 'ppt', 'docx', 'doc', 'xlsx', 'xls', 'html', 'htm'].includes(ext || '')) {
+        alert('不支持的文件格式，请上传 PPT、Word、Excel 或 HTML 文件');
         continue;
       }
       await uploadFile(file);
@@ -520,48 +521,35 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   async function uploadFile(file: File) {
     uploadStatus.classList.remove('hidden');
     statusText.textContent = `正在处理: ${file.name}`;
-    progressFill.style.width = '0%';
+    progressFill.style.width = '10%';
 
     try {
-      // 解析 PPT
-      const JSZip = await import('jszip');
-      const zip = await JSZip.loadAsync(file);
+      const ext = file.name.toLowerCase().split('.').pop();
+      let slides: { title: string; content: string }[] = [];
 
-      const slideFiles: string[] = [];
-      zip.forEach((path) => {
-        if (path.match(/ppt\/slides\/slide\d+\.xml$/)) {
-          slideFiles.push(path);
-        }
-      });
-
-      slideFiles.sort();
-      const slides = [];
-
-      for (let i = 0; i < slideFiles.length; i++) {
-        progressFill.style.width = `${((i + 1) / slideFiles.length) * 100}%`;
-        statusText.textContent = `解析幻灯片 ${i + 1}/${slideFiles.length}...`;
-
-        const xml = await zip.file(slideFiles[i])!.async('text');
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(xml, 'text/xml');
-
-        const texts: string[] = [];
-        doc.querySelectorAll('a:t').forEach(t => {
-          const text = t.textContent?.trim();
-          if (text) texts.push(text);
-        });
-
-        slides.push({
-          title: texts[0] || `幻灯片 ${i + 1}`,
-          content: texts.slice(1).join('\n') || texts[0] || ''
-        });
+      if (ext === 'pptx' || ext === 'ppt') {
+        // 解析 PPT
+        slides = await parsePPT(file);
+      } else if (ext === 'docx' || ext === 'doc') {
+        // 解析 Word
+        slides = await parseWord(file);
+      } else if (ext === 'xlsx' || ext === 'xls') {
+        // 解析 Excel
+        slides = await parseExcel(file);
+      } else if (ext === 'html' || ext === 'htm') {
+        // 解析 HTML
+        slides = await parseHTML(file);
       }
+
+      progressFill.style.width = '90%';
+      statusText.textContent = '正在保存...';
 
       // 尝试上传到服务器
       const token = sessionStorage.getItem(STORAGE_KEY);
       const slideData = {
-        title: file.name.replace(/\.(pptx|ppt)$/, ''),
+        title: file.name.replace(/\.\w+$/, ''),
         fileName: file.name,
+        fileType: ext,
         slides,
       };
 
@@ -590,6 +578,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         statusText.textContent = '✓ 已保存到本地';
       }
 
+      progressFill.style.width = '100%';
       setTimeout(() => {
         uploadStatus.classList.add('hidden');
       }, 2000);
@@ -598,6 +587,163 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       console.error('解析失败:', error);
       statusText.textContent = '✗ 解析失败，请检查文件格式';
     }
+  }
+
+  // 解析 PPT
+  async function parsePPT(file: File): Promise<{ title: string; content: string }[]> {
+    const JSZip = await import('jszip');
+    const zip = await JSZip.loadAsync(file);
+
+    const slideFiles: string[] = [];
+    zip.forEach((path) => {
+      if (path.match(/ppt\/slides\/slide\d+\.xml$/)) {
+        slideFiles.push(path);
+      }
+    });
+
+    slideFiles.sort();
+    const slides = [];
+
+    for (let i = 0; i < slideFiles.length; i++) {
+      progressFill.style.width = `${10 + ((i + 1) / slideFiles.length) * 70}%`;
+      statusText.textContent = `解析幻灯片 ${i + 1}/${slideFiles.length}...`;
+
+      const xml = await zip.file(slideFiles[i])!.async('text');
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xml, 'text/xml');
+
+      const texts: string[] = [];
+      doc.querySelectorAll('a:t').forEach(t => {
+        const text = t.textContent?.trim();
+        if (text) texts.push(text);
+      });
+
+      slides.push({
+        title: texts[0] || `幻灯片 ${i + 1}`,
+        content: texts.slice(1).join('\n') || texts[0] || ''
+      });
+    }
+
+    return slides;
+  }
+
+  // 解析 Word
+  async function parseWord(file: File): Promise<{ title: string; content: string }[]> {
+    const JSZip = await import('jszip');
+    const zip = await JSZip.loadAsync(file);
+
+    const docXml = await zip.file('word/document.xml')?.async('text');
+    if (!docXml) throw new Error('无法解析 Word 文档');
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(docXml, 'text/xml');
+
+    // 提取段落
+    const paragraphs: string[] = [];
+    doc.querySelectorAll('w:p').forEach(p => {
+      const texts: string[] = [];
+      p.querySelectorAll('w:t').forEach(t => {
+        const text = t.textContent?.trim();
+        if (text) texts.push(text);
+      });
+      if (texts.length > 0) {
+        paragraphs.push(texts.join(''));
+      }
+    });
+
+    // 按标题或分页符分割成幻灯片
+    const slides: { title: string; content: string }[] = [];
+    let currentTitle = '文档内容';
+    let currentContent: string[] = [];
+
+    for (const para of paragraphs) {
+      // 简单的标题检测（根据字体大小或样式）
+      if (para.length < 50 && para === para.toUpperCase() || para.startsWith('#')) {
+        if (currentContent.length > 0) {
+          slides.push({
+            title: currentTitle,
+            content: currentContent.join('\n')
+          });
+        }
+        currentTitle = para.replace(/^#+\s*/, '');
+        currentContent = [];
+      } else {
+        currentContent.push(para);
+      }
+    }
+
+    if (currentContent.length > 0) {
+      slides.push({
+        title: currentTitle,
+        content: currentContent.join('\n')
+      });
+    }
+
+    // 如果没有检测到分节，将整个文档作为一页
+    if (slides.length === 0 && paragraphs.length > 0) {
+      slides.push({
+        title: '文档内容',
+        content: paragraphs.join('\n\n')
+      });
+    }
+
+    return slides.length > 0 ? slides : [{ title: '文档内容', content: '无法提取内容' }];
+  }
+
+  // 解析 Excel
+  async function parseExcel(file: File): Promise<{ title: string; content: string }[]> {
+    const XLSX = await import('xlsx');
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: 'array' });
+
+    const slides: { title: string; content: string }[] = [];
+
+    for (const sheetName of workbook.SheetNames) {
+      const sheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+
+      if (jsonData.length === 0) continue;
+
+      // 将表格数据转换为可读格式
+      const content: string[] = [];
+      jsonData.forEach((row, idx) => {
+        if (row.length > 0) {
+          content.push(row.join(' | '));
+        }
+      });
+
+      slides.push({
+        title: sheetName,
+        content: content.join('\n')
+      });
+    }
+
+    return slides.length > 0 ? slides : [{ title: '表格数据', content: '无法提取内容' }];
+  }
+
+  // 解析 HTML
+  async function parseHTML(file: File): Promise<{ title: string; content: string }[]> {
+    const html = await file.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    const slides: { title: string; content: string }[] = [];
+
+    // 提取标题
+    const title = doc.querySelector('title')?.textContent || 'HTML 文档';
+
+    // 提取主要内容
+    const body = doc.querySelector('body');
+    if (body) {
+      // 将 HTML 转换为文本，保留结构
+      const text = body.innerText || body.textContent || '';
+      slides.push({
+        title,
+        content: text.trim()
+      });
+    }
+
+    return slides.length > 0 ? slides : [{ title: 'HTML 文档', content: '无法提取内容' }];
   }
 
   // 本地存储操作
