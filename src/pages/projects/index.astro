@@ -19,7 +19,7 @@ const projects = await getCollection('projects');
         )}
         <div class="project-content">
           <h2>
-            <a href={`/projects/${project.slug}`}>{project.data.title}</a>
+            <a href={`/projects/${project.id}`}>{project.data.title}</a>
           </h2>
           <p>{project.data.description}</p>
           <div class="project-tech">

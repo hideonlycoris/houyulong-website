@@ -24,7 +24,7 @@ const sortedPosts = posts.sort((a, b) => b.data.date.valueOf() - a.data.date.val
       <article class="blog-item" data-category={post.data.category}>
         <time>{post.data.date.toLocaleDateString('zh-CN')}</time>
         <h2>
-          <a href={`/blog/${post.slug}`}>{post.data.title}</a>
+          <a href={`/blog/${post.id}`}>{post.data.title}</a>
         </h2>
         <p>{post.data.description}</p>
         <div class="blog-tags">

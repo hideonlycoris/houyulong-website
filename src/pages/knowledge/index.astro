@@ -17,7 +17,7 @@ const sortedKnowledge = knowledge.sort((a, b) => a.data.order - b.data.order);
       <article class="knowledge-card">
         <span class="knowledge-category">{item.data.category}</span>
         <h2>
-          <a href={`/knowledge/${item.slug}`}>{item.data.title}</a>
+          <a href={`/knowledge/${item.id}`}>{item.data.title}</a>
         </h2>
         <p>{item.data.description}</p>
       </article>
