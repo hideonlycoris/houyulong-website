@@ -2,6 +2,7 @@
 title: "跨境供应链 S&OP 计划系统"
 description: "全链路销售与运营计划管理平台，集成需求预测、库存优化、自动补货"
 tech: ["React", "TypeScript", "Python", "FastAPI", "PostgreSQL", "Docker"]
+demo: "https://scsop-app.streamlit.app/"
 github: "https://github.com/hideonlycoris/sop-planner"
 order: 2
 ---
