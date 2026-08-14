@@ -711,10 +711,66 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </style>
 
 <script>
+  // Supabase 配置
+  const SUPABASE_URL = 'https://qdkcbsunyustkxkcrnvc.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_-IoU1wPbpDBXSny2Em6mmQ_zkMiz0Dd';
+  const SUPABASE_API = `${SUPABASE_URL}/rest/v1`;
+
   const AUTH_KEY = 'admin_auth';
 
   let isAuthenticated = false;
   let currentSection = 'annual';
+
+  // Supabase API 辅助函数
+  async function supabaseGet(table: string, params: string = '') {
+    const url = `${SUPABASE_API}/${table}?select=*${params ? '&' + params : ''}`;
+    const res = await fetch(url, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+      }
+    });
+    return res.json();
+  }
+
+  async function supabasePost(table: string, data: any) {
+    const res = await fetch(`${SUPABASE_API}/${table}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  }
+
+  async function supabaseDelete(table: string, condition: string) {
+    const res = await fetch(`${SUPABASE_API}/${table}?${condition}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+      }
+    });
+    return res.ok;
+  }
+
+  async function supabaseUpsert(table: string, data: any, onConflict: string) {
+    const res = await fetch(`${SUPABASE_API}/${table}?on_conflict=${onConflict}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Prefer': 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify(data),
+    });
+    return res.ok;
+  }
 
   const loginModal = document.getElementById('login-modal')!;
   const mainContent = document.getElementById('main-content')!;
@@ -724,7 +780,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   const logoutBtn = document.getElementById('logout-btn')!;
   const navItems = document.querySelectorAll('.nav-item');
 
-  function init() {
+  async function init() {
     const token = sessionStorage.getItem(AUTH_KEY);
     if (token) { isAuthenticated = true; showMainContent(); }
 
@@ -740,9 +796,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     });
 
     document.getElementById('diary-date').valueAsDate = new Date();
-    loadDiary();
-    loadNotes();
-    loadFiles();
+    await loadDiary();
+    await loadNotes();
+    await loadFiles();
     setupFileUpload();
     setupViewer();
   }
@@ -809,7 +865,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   async function processFiles(files: FileList) {
     for (const file of Array.from(files)) { await uploadFile(file); }
-    loadFiles();
+    await loadFiles();
   }
 
   async function uploadFile(file: File) {
@@ -833,18 +889,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       progressFill.style.width = '90%';
 
       const fileData = {
-        id: Date.now().toString(),
+        file_id: Date.now().toString(),
         title: file.name.replace(/\.\w+$/, ''),
-        fileName: file.name,
-        fileType: ext,
+        file_name: file.name,
+        file_type: ext,
         slides,
-        date: new Date().toLocaleDateString('zh-CN'),
         section: currentSection,
       };
 
-      const files = getFilesLocal();
-      files.unshift(fileData);
-      localStorage.setItem('admin_files', JSON.stringify(files));
+      await supabasePost('files', fileData);
 
       statusText.textContent = '✓ 上传成功！';
       progressFill.style.width = '100%';
@@ -912,21 +965,29 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     return [{ title, content: '__HTML__', rawHtml: html }];
   }
 
-  function getFilesLocal() {
-    const data = localStorage.getItem('admin_files');
-    return data ? JSON.parse(data) : [];
+  async function getFilesFromSupabase() {
+    const files = await supabaseGet('files', `order=created_at.desc`);
+    return files.map(f => ({
+      id: f.file_id,
+      title: f.title,
+      fileName: f.file_name,
+      fileType: f.file_type,
+      slides: f.slides,
+      section: f.section,
+      date: new Date(f.created_at).toLocaleDateString('zh-CN'),
+    }));
   }
 
-  function deleteFileLocal(id: string, e: Event) {
+  async function deleteFileFromSupabase(fileId: string, e: Event) {
     e.stopPropagation();
     if (!confirm('确定删除此文件？')) return;
-    const files = getFilesLocal().filter(f => f.id !== id);
-    localStorage.setItem('admin_files', JSON.stringify(files));
+    await supabaseDelete('files', `file_id=eq.${fileId}`);
     loadFiles();
   }
 
-  function loadFiles() {
-    const files = getFilesLocal().filter(f => f.section === currentSection);
+  async function loadFiles() {
+    const allFiles = await getFilesFromSupabase();
+    const files = allFiles.filter(f => f.section === currentSection);
     const listEl = document.getElementById(`files-list-${currentSection}`)!;
     const emptyEl = document.getElementById(`empty-${currentSection}`)!;
 
@@ -954,16 +1015,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
           <div class="file-card-footer">
             <span class="file-card-action">查看详情 →</span>
-            <button class="file-delete-btn" onclick="deleteFileLocal('${file.id}', event)">删除</button>
+            <button class="file-delete-btn" onclick="deleteFileFromSupabase('${file.id}', event)">删除</button>
           </div>
         </div>
       `;
     }).join('');
 
     listEl.querySelectorAll('.file-card').forEach(card => {
-      card.addEventListener('click', () => {
+      card.addEventListener('click', async () => {
         const id = card.getAttribute('data-id');
-        const file = getFilesLocal().find(f => f.id === id);
+        const allFiles = await getFilesFromSupabase();
+        const file = allFiles.find(f => f.id === id);
         if (file) openViewer(file);
       });
     });
@@ -1077,8 +1139,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   }
 
   // 日记
-  function loadDiary() {
-    const diaries = JSON.parse(localStorage.getItem('admin_diary') || '[]');
+  async function loadDiary() {
+    const diaries = await supabaseGet('diaries', 'order=diary_date.desc');
     const listEl = document.getElementById('diary-list')!;
     const emptyEl = document.getElementById('empty-diary')!;
 
@@ -1086,8 +1148,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     emptyEl.classList.add('hidden');
     listEl.innerHTML = diaries.map(d => `
-      <div class="diary-item" data-date="${d.date}">
-        <div class="diary-item-date">${d.date}</div>
+      <div class="diary-item" data-date="${d.diary_date}">
+        <div class="diary-item-date">${d.diary_date}</div>
         <div class="diary-item-preview">${d.content.substring(0, 100)}...</div>
       </div>
     `).join('');
@@ -1095,33 +1157,32 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     listEl.querySelectorAll('.diary-item').forEach(item => {
       item.addEventListener('click', () => {
         const date = item.getAttribute('data-date');
-        const diary = diaries.find(d => d.date === date);
+        const diary = diaries.find(d => d.diary_date === date);
         if (diary) {
-          document.getElementById('diary-date').value = diary.date;
+          document.getElementById('diary-date').value = diary.diary_date;
           document.getElementById('diary-content').value = diary.content;
         }
       });
     });
   }
 
-  document.getElementById('save-diary')?.addEventListener('click', () => {
+  document.getElementById('save-diary')?.addEventListener('click', async () => {
     const date = (document.getElementById('diary-date') as HTMLInputElement).value;
     const content = (document.getElementById('diary-content') as HTMLTextAreaElement).value;
     if (!date || !content) { alert('请填写日期和内容'); return; }
 
-    const diaries = JSON.parse(localStorage.getItem('admin_diary') || '[]');
-    const existing = diaries.findIndex(d => d.date === date);
-    if (existing >= 0) diaries[existing].content = content;
-    else diaries.unshift({ date, content });
+    await supabaseUpsert('diaries', {
+      diary_date: date,
+      content: content,
+    }, 'diary_date');
 
-    localStorage.setItem('admin_diary', JSON.stringify(diaries));
     loadDiary();
     alert('保存成功！');
   });
 
   // 笔记
-  function loadNotes() {
-    const notes = JSON.parse(localStorage.getItem('admin_notes') || '[]');
+  async function loadNotes() {
+    const notes = await supabaseGet('notes', 'order=created_at.desc');
     const listEl = document.getElementById('notes-list')!;
     const emptyEl = document.getElementById('empty-notes')!;
 
@@ -1129,7 +1190,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     emptyEl.classList.add('hidden');
     listEl.innerHTML = notes.map(n => `
-      <div class="note-card" data-id="${n.id}">
+      <div class="note-card" data-id="${n.note_id}">
         <div class="note-card-title">${n.title}</div>
         <div class="note-card-preview">${n.content.substring(0, 80)}...</div>
       </div>
@@ -1138,7 +1199,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     listEl.querySelectorAll('.note-card').forEach(card => {
       card.addEventListener('click', () => {
         const id = card.getAttribute('data-id');
-        const note = notes.find(n => n.id === id);
+        const note = notes.find(n => n.note_id === id);
         if (note) {
           document.getElementById('note-title').value = note.title;
           document.getElementById('note-content').value = note.content;
@@ -1147,14 +1208,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     });
   }
 
-  document.getElementById('save-note')?.addEventListener('click', () => {
+  document.getElementById('save-note')?.addEventListener('click', async () => {
     const title = (document.getElementById('note-title') as HTMLInputElement).value;
     const content = (document.getElementById('note-content') as HTMLTextAreaElement).value;
     if (!title || !content) { alert('请填写标题和内容'); return; }
 
-    const notes = JSON.parse(localStorage.getItem('admin_notes') || '[]');
-    notes.unshift({ id: Date.now().toString(), title, content, date: new Date().toLocaleDateString('zh-CN') });
-    localStorage.setItem('admin_notes', JSON.stringify(notes));
+    await supabasePost('notes', {
+      note_id: Date.now().toString(),
+      title: title,
+      content: content,
+    });
+
     loadNotes();
     (document.getElementById('note-title') as HTMLInputElement).value = '';
     (document.getElementById('note-content') as HTMLTextAreaElement).value = '';
@@ -1162,7 +1226,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   });
 
   // 暴露删除函数
-  (window as any).deleteFileLocal = deleteFileLocal;
+  (window as any).deleteFileFromSupabase = deleteFileFromSupabase;
 
   init();
 </script>
