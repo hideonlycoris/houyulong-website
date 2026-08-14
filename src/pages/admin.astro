@@ -1019,8 +1019,34 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       if (currentBlobUrl) {
         URL.revokeObjectURL(currentBlobUrl);
       }
-      // 使用Blob URL避免转义问题
-      const blob = new Blob([slide.rawHtml], { type: 'text/html' });
+
+      // 注入CSS强制HTML内容占满iframe
+      const injectCss = `
+        <style>
+          html, body {
+            width: 100% !important;
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: auto !important;
+          }
+          * {
+            max-width: 100% !important;
+          }
+        </style>
+      `;
+
+      // 在head标签后注入CSS
+      let modifiedHtml = slide.rawHtml;
+      if (modifiedHtml.includes('</head>')) {
+        modifiedHtml = modifiedHtml.replace('</head>', injectCss + '</head>');
+      } else if (modifiedHtml.includes('<html')) {
+        modifiedHtml = modifiedHtml.replace(/<html[^>]*>/, '$&' + injectCss);
+      } else {
+        modifiedHtml = injectCss + modifiedHtml;
+      }
+
+      const blob = new Blob([modifiedHtml], { type: 'text/html' });
       currentBlobUrl = URL.createObjectURL(blob);
       content.innerHTML = `
         <div class="html-viewer-container">
