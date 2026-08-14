@@ -950,6 +950,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   // 查看器
   let currentFile: any = null;
   let currentSlideIndex = 0;
+  let currentBlobUrl: string | null = null;
 
   function setupViewer() {
     document.getElementById('close-viewer')!.addEventListener('click', closeViewer);
@@ -978,6 +979,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   function closeViewer() {
     document.getElementById('viewer-page').classList.add('hidden');
     document.body.style.overflow = '';
+    // 清理Blob URL
+    if (currentBlobUrl) {
+      URL.revokeObjectURL(currentBlobUrl);
+      currentBlobUrl = null;
+    }
   }
 
   function prevSlide() {
@@ -1004,9 +1010,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     // HTML文件直接在iframe中显示
     if (slide.rawHtml) {
+      // 清理之前的Blob URL
+      if (currentBlobUrl) {
+        URL.revokeObjectURL(currentBlobUrl);
+      }
+      // 使用Blob URL避免转义问题
+      const blob = new Blob([slide.rawHtml], { type: 'text/html' });
+      currentBlobUrl = URL.createObjectURL(blob);
       content.innerHTML = `
         <div class="html-viewer-container">
-          <iframe srcdoc="${slide.rawHtml.replace(/"/g, '&quot;')}" class="html-iframe"></iframe>
+          <iframe src="${currentBlobUrl}" class="html-iframe"></iframe>
         </div>
       `;
       return;
