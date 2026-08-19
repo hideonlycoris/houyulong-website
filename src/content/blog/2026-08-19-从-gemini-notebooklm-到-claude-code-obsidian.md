@@ -1,8 +1,8 @@
 ---
 title: "从 Gemini + NotebookLM 到 Claude Code + Obsidian"
-description: ""
+description: "Claude Code + Obsidian 打造第二大脑的工作流配置指南"
 date: 2026-08-19
-tags: []
+tags: ["Claude", "Obsidian", "效率", "AI"]
 category: "AI"
 ---
 
