@@ -1,5 +1,5 @@
 ---
-title: "驭长风 — 供应链新员工培训系统"
+title: "供应链新员工培训系统"
 description: "基于 AI 的智能培训系统，支持自动评分、证书生成、课程管理"
 tech: ["Python", "Streamlit", "Google Gemini", "SQLite"]
 demo: "https://train-sys.streamlit.app"
