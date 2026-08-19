@@ -25,6 +25,7 @@ const { title, description = '个人网站 - 供应链管理 | AI 工具 | 技�
           <a href="/projects">项目</a>
           <a href="/blog">博客</a>
           <a href="/knowledge">知识库</a>
+          <a href="/blog/editor" class="write-link">✏️</a>
         </div>
         <button class="search-btn" id="search-toggle">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -150,6 +151,15 @@ const { title, description = '个人网站 - 供应链管理 | AI 工具 | 技�
 
       .nav-links a:hover {
         color: var(--color-text);
+      }
+
+      .nav-links .write-link {
+        opacity: 0.5;
+        font-size: 1.1rem;
+      }
+
+      .nav-links .write-link:hover {
+        opacity: 1;
       }
 
       .search-btn {

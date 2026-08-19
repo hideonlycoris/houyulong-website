@@ -1,0 +1,466 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="写博客">
+  <!-- 登录模态框 -->
+  <div id="login-modal" class="modal">
+    <div class="modal-content">
+      <h2>🔐 验证身份</h2>
+      <input type="password" id="password-input" placeholder="请输入访问密码" />
+      <button id="login-btn" class="btn-primary">验证</button>
+      <p id="login-error" class="error hidden">密码错误</p>
+    </div>
+  </div>
+
+  <!-- 编辑器主体 -->
+  <div id="editor-container" class="hidden">
+    <div class="editor-header">
+      <h1>✏️ 写博客</h1>
+      <button id="publish-btn" class="btn-publish">发布文章</button>
+    </div>
+
+    <div class="editor-meta">
+      <div class="meta-row">
+        <input type="text" id="post-title" placeholder="文章标题" class="input-title" />
+      </div>
+      <div class="meta-row">
+        <input type="text" id="post-description" placeholder="文章描述（一句话概括）" class="input-desc" />
+      </div>
+      <div class="meta-row meta-tags">
+        <select id="post-category">
+          <option value="AI">AI</option>
+          <option value="供应链">供应链</option>
+          <option value="技术">技术</option>
+        </select>
+        <input type="text" id="post-tags" placeholder="标签（逗号分隔，如：Claude, 效率" />
+      </div>
+    </div>
+
+    <div class="editor-body">
+      <div class="editor-pane">
+        <div class="pane-header">Markdown 编辑</div>
+        <textarea id="post-content" placeholder="在这里撰写文章内容...&#10;&#10;支持 Markdown 语法：&#10;## 二级标题&#10;**加粗** *斜体*&#10;- 列表项&#10;> 引用&#10;```代码块```"></textarea>
+      </div>
+      <div class="preview-pane">
+        <div class="pane-header">实时预览</div>
+        <div id="post-preview" class="preview-content"></div>
+      </div>
+    </div>
+
+    <div id="status-message" class="status hidden"></div>
+  </div>
+</BaseLayout>
+
+<style>
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal-content {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 2rem;
+    width: 320px;
+    text-align: center;
+  }
+
+  .modal-content h2 {
+    margin-bottom: 1rem;
+  }
+
+  .modal-content input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    margin-bottom: 1rem;
+    font-size: 1rem;
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--color-accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+
+  .btn-primary:hover {
+    background: var(--color-accent-hover);
+  }
+
+  .error {
+    color: var(--color-danger);
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  /* 编辑器样式 */
+  .editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .editor-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .btn-publish {
+    padding: 0.75rem 1.5rem;
+    background: var(--color-accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-publish:hover {
+    background: var(--color-accent-hover);
+  }
+
+  .btn-publish:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .editor-meta {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .meta-row {
+    margin-bottom: 0.75rem;
+  }
+
+  .meta-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .input-title, .input-desc {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 1rem;
+  }
+
+  .input-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .meta-tags {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .meta-tags select, .meta-tags input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 0.9rem;
+  }
+
+  .meta-tags select {
+    width: 120px;
+  }
+
+  .meta-tags input {
+    flex: 1;
+  }
+
+  .editor-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    height: calc(100vh - 320px);
+    min-height: 400px;
+  }
+
+  .editor-pane, .preview-pane {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pane-header {
+    padding: 0.75rem 1rem;
+    background: var(--color-surface-hover);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  #post-content {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    background: transparent;
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    resize: none;
+    outline: none;
+  }
+
+  .preview-content {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  .preview-content :global(h2) {
+    font-size: 1.4rem;
+    margin: 1.5rem 0 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .preview-content :global(h3) {
+    font-size: 1.2rem;
+    margin: 1.25rem 0 0.5rem;
+  }
+
+  .preview-content :global(p) {
+    margin-bottom: 1rem;
+  }
+
+  .preview-content :global(code) {
+    background: var(--color-surface-hover);
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+
+  .preview-content :global(pre) {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+  }
+
+  .preview-content :global(pre code) {
+    background: none;
+    padding: 0;
+  }
+
+  .preview-content :global(ul), .preview-content :global(ol) {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+  }
+
+  .preview-content :global(li) {
+    margin-bottom: 0.4rem;
+  }
+
+  .preview-content :global(blockquote) {
+    border-left: 3px solid var(--color-accent);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: var(--color-text-muted);
+  }
+
+  .preview-content :global(strong) {
+    font-weight: 600;
+  }
+
+  .status {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  .status.success {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--color-success);
+    border: 1px solid var(--color-success);
+  }
+
+  .status.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--color-danger);
+    border: 1px solid var(--color-danger);
+  }
+
+  .status.loading {
+    background: rgba(91, 122, 157, 0.1);
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent);
+  }
+</style>
+
+<script>
+  const AUTH_KEY = 'blog_editor_auth';
+  const loginModal = document.getElementById('login-modal')!;
+  const editorContainer = document.getElementById('editor-container')!;
+  const passwordInput = document.getElementById('password-input') as HTMLInputElement;
+  const loginBtn = document.getElementById('login-btn')!;
+  const loginError = document.getElementById('login-error')!;
+  const publishBtn = document.getElementById('publish-btn') as HTMLButtonElement;
+  const statusMessage = document.getElementById('status-message')!;
+
+  const postTitle = document.getElementById('post-title') as HTMLInputElement;
+  const postDescription = document.getElementById('post-description') as HTMLInputElement;
+  const postCategory = document.getElementById('post-category') as HTMLSelectElement;
+  const postTags = document.getElementById('post-tags') as HTMLInputElement;
+  const postContent = document.getElementById('post-content') as HTMLTextAreaElement;
+  const postPreview = document.getElementById('post-preview')!;
+
+  // 检查登录状态
+  const token = sessionStorage.getItem(AUTH_KEY);
+  if (token) {
+    loginModal.classList.add('hidden');
+    editorContainer.classList.remove('hidden');
+  }
+
+  // 登录
+  loginBtn.addEventListener('click', handleLogin);
+  passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+
+  async function handleLogin() {
+    const password = passwordInput.value.trim();
+    if (!password) return;
+
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        sessionStorage.setItem(AUTH_KEY, data.token);
+        loginModal.classList.add('hidden');
+        editorContainer.classList.remove('hidden');
+      } else {
+        loginError.classList.remove('hidden');
+        passwordInput.value = '';
+      }
+    } catch {
+      loginError.textContent = '连接失败';
+      loginError.classList.remove('hidden');
+    }
+  }
+
+  // Markdown 转 HTML（简易版）
+  function markdownToHtml(md: string): string {
+    return md
+      // 代码块
+      .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>')
+      // 行内代码
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      // 标题
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      // 粗体和斜体
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      // 引用
+      .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+      // 列表
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+      // 链接
+      .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
+      // 段落
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/^(?!<[hupbol])(.+)$/gm, '<p>$1</p>')
+      // 清理
+      .replace(/<p><\/p>/g, '')
+      .replace(/\n/g, '<br>');
+  }
+
+  // 实时预览
+  postContent.addEventListener('input', () => {
+    postPreview.innerHTML = markdownToHtml(postContent.value);
+  });
+
+  // 发布
+  publishBtn.addEventListener('click', handlePublish);
+
+  async function handlePublish() {
+    const title = postTitle.value.trim();
+    const description = postDescription.value.trim();
+    const category = postCategory.value;
+    const tags = postTags.value.split(',').map(t => t.trim()).filter(Boolean);
+    const content = postContent.value.trim();
+
+    if (!title) return showStatus('请输入标题', 'error');
+    if (!content) return showStatus('请输入内容', 'error');
+
+    publishBtn.disabled = true;
+    showStatus('发布中...', 'loading');
+
+    try {
+      const token = sessionStorage.getItem(AUTH_KEY);
+      const response = await fetch('/api/blog', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ title, description, category, tags, content }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showStatus('✅ 发布成功！页面即将跳转...', 'success');
+        setTimeout(() => {
+          window.location.href = '/blog';
+        }, 1500);
+      } else {
+        showStatus(`发布失败: ${data.error}`, 'error');
+      }
+    } catch (err) {
+      showStatus('发布失败，请稍后重试', 'error');
+    } finally {
+      publishBtn.disabled = false;
+    }
+  }
+
+  function showStatus(msg: string, type: 'success' | 'error' | 'loading') {
+    statusMessage.textContent = msg;
+    statusMessage.className = `status ${type}`;
+  }
+</script>
