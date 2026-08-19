@@ -1,4 +1,16 @@
 // 博客 API - 通过 GitHub API 提交文章
+
+// Unicode 字符串转 Base64
+function encodeToBase64(str) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  let binary = '';
+  for (const byte of data) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
@@ -66,7 +78,7 @@ ${content}`;
         },
         body: JSON.stringify({
           message: `新增博客: ${title}`,
-          content: btoa(unescape(encodeURIComponent(frontmatter))),
+          content: encodeToBase64(frontmatter),
           branch: 'master',
         }),
       }
