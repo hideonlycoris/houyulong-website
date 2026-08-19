@@ -106,7 +106,8 @@ ${content}`;
   } catch (error) {
     return new Response(JSON.stringify({
       error: '请求处理失败',
-      detail: error.message,
+      detail: error.message || String(error),
+      stack: error.stack,
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },

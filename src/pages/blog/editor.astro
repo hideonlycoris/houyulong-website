@@ -450,7 +450,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           window.location.href = '/blog';
         }, 1500);
       } else {
-        showStatus(`发布失败: ${data.error}`, 'error');
+        showStatus(`发布失败: ${data.error} ${data.detail || ''}`, 'error');
       }
     } catch (err) {
       showStatus('发布失败，请稍后重试', 'error');
