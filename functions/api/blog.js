@@ -53,12 +53,13 @@ export async function onRequestPost(context) {
     const fileName = `${date}-${slug}.md`;
 
     // 构建 Markdown 内容
+    const safeTags = Array.isArray(tags) ? tags : [];
     const frontmatter = `---
 title: "${title}"
 description: "${description || ''}"
 date: ${date}
-tags: [${tags.map(t => `"${t}"`).join(', ')}]
-category: "${category}"
+tags: [${safeTags.map(t => `"${t}"`).join(', ')}]
+category: "${category || 'AI'}"
 ---
 
 ${content}`;
@@ -67,22 +68,22 @@ ${content}`;
     const githubToken = env.GITHUB_TOKEN;
     const repo = env.GITHUB_REPO || 'hideonlycoris/houyulong-website';
     const filePath = `src/content/blog/${fileName}`;
+    const encodedContent = encodeToBase64(frontmatter);
+    const apiUrl = `https://api.github.com/repos/${repo}/contents/${filePath}`;
 
-    const githubResponse = await fetch(
-      `https://api.github.com/repos/${repo}/contents/${filePath}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${githubToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: `新增博客: ${title}`,
-          content: encodeToBase64(frontmatter),
-          branch: 'master',
-        }),
-      }
-    );
+    const githubResponse = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${githubToken}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'Blog-Editor',
+      },
+      body: JSON.stringify({
+        message: `新增博客: ${title}`,
+        content: encodedContent,
+        branch: 'master',
+      }),
+    });
 
     const githubData = await githubResponse.json();
 
@@ -96,18 +97,18 @@ ${content}`;
       });
     } else {
       return new Response(JSON.stringify({
-        error: 'GitHub 提交失败',
+        error: 'GitHub API 错误',
         detail: githubData.message,
-      }), {
         status: githubResponse.status,
+      }), {
+        status: 500,
         headers: { 'Content-Type': 'application/json' },
       });
     }
   } catch (error) {
     return new Response(JSON.stringify({
-      error: '请求处理失败',
+      error: '服务器错误',
       detail: error.message || String(error),
-      stack: error.stack,
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
