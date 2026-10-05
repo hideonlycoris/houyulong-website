@@ -295,6 +295,32 @@ const { title, description = '个人网站 - 供应链管理 | AI 工具 | 技�
         color: var(--color-text-muted);
       }
 
+      .search-result-type {
+        display: inline-block;
+        margin-left: 0.5rem;
+        padding: 0.1rem 0.5rem;
+        background: var(--color-surface-hover);
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 400;
+        color: var(--color-accent);
+        vertical-align: middle;
+      }
+
+      .search-empty {
+        padding: 1.5rem 1rem;
+        text-align: center;
+        color: var(--color-text-muted);
+        font-size: 0.9rem;
+      }
+
+      .search-results mark {
+        background: rgba(201, 162, 39, 0.25);
+        color: inherit;
+        border-radius: 2px;
+        padding: 0 1px;
+      }
+
       /* Responsive */
       @media (max-width: 768px) {
         .nav-links {
@@ -316,9 +342,105 @@ const { title, description = '个人网站 - 供应链管理 | AI 工具 | 技�
       const searchInput = document.getElementById('search-input') as HTMLInputElement;
       const searchResults = document.getElementById('search-results');
 
+      interface SearchEntry {
+        title: string;
+        description: string;
+        url: string;
+        type: string;
+        text: string;
+      }
+
+      let searchIndex: SearchEntry[] | null = null;
+      let indexLoading = false;
+
+      async function loadIndex(): Promise<SearchEntry[]> {
+        if (searchIndex) return searchIndex;
+        if (indexLoading) {
+          while (indexLoading) await new Promise(r => setTimeout(r, 50));
+          return searchIndex || [];
+        }
+        indexLoading = true;
+        try {
+          const res = await fetch('/search.json');
+          searchIndex = await res.json();
+        } catch {
+          searchIndex = [];
+        } finally {
+          indexLoading = false;
+        }
+        return searchIndex;
+      }
+
+      function escapeHtml(str: string): string {
+        return str.replace(/[&<>"']/g, c => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+        }[c] as string));
+      }
+
+      function highlight(text: string, query: string): string {
+        const idx = text.toLowerCase().indexOf(query.toLowerCase());
+        if (idx === -1) return escapeHtml(text.slice(0, 80));
+        const start = Math.max(0, idx - 25);
+        const snippet = (start > 0 ? '…' : '') + text.slice(start, start + 90);
+        const safe = escapeHtml(snippet);
+        const relIdx = safe.toLowerCase().indexOf(escapeHtml(query).toLowerCase());
+        if (relIdx === -1) return safe;
+        return safe.slice(0, relIdx) + '<mark>' + safe.slice(relIdx, relIdx + query.length) + '</mark>' + safe.slice(relIdx + query.length);
+      }
+
+      async function runSearch() {
+        const query = searchInput.value.trim();
+        if (!searchResults) return;
+
+        if (!query) {
+          searchResults.innerHTML = '<div class="search-empty">输入关键词搜索文章、知识库、项目…</div>';
+          return;
+        }
+
+        searchResults.innerHTML = '<div class="search-empty">搜索中…</div>';
+        const index = await loadIndex();
+        const q = query.toLowerCase();
+
+        const scored = index
+          .map(entry => {
+            let score = 0;
+            if (entry.title.toLowerCase().includes(q)) score += 100;
+            if (entry.description.toLowerCase().includes(q)) score += 50;
+            if (entry.text.toLowerCase().includes(q)) score += 10;
+            return { entry, score };
+          })
+          .filter(item => item.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 10);
+
+        if (scored.length === 0) {
+          searchResults.innerHTML = '<div class="search-empty">没有找到相关内容</div>';
+          return;
+        }
+
+        searchResults.innerHTML = scored.map(({ entry }) => `
+          <a class="search-result-item" href="${entry.url}">
+            <div class="search-result-title">${escapeHtml(entry.title)} <span class="search-result-type">${entry.type}</span></div>
+            <div class="search-result-excerpt">${highlight(entry.description || entry.text, query)}</div>
+          </a>
+        `).join('');
+      }
+
+      let searchTimer: ReturnType<typeof setTimeout>;
+      searchInput?.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(runSearch, 150);
+      });
+
       function openSearch() {
         searchModal.style.display = 'block';
         searchInput.focus();
+        if (!searchInput.value.trim()) {
+          searchResults!.innerHTML = '<div class="search-empty">输入关键词搜索文章、知识库、项目…</div>';
+        } else {
+          runSearch();
+        }
+        loadIndex();
       }
 
       function closeSearch() {
